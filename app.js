@@ -57,6 +57,14 @@ const app = {
 
         // Specific screen init
         if (screenId === 'settings') this.loadConfigToUI();
+        if (screenId === 'oradores') {
+            this.tempOraBosqs = [];
+            this.renderTempTags();
+            this.renderOradores();
+        }
+        if (screenId === 'consultar') this.renderConsultar();
+        if (screenId === 'congregaciones' || screenId === 'bosquejos') this.renderLists();
+        if (screenId === 'arreglos') this.updateDataLists();
     },
 
     loadConfigToUI() {
@@ -481,12 +489,15 @@ const app = {
 
         const btnAddOraBosq = document.getElementById('btn-add-ora-bosq');
         if (btnAddOraBosq) {
-            btnAddOraBosq.addEventListener('click', () => {
+            btnAddOraBosq.addEventListener('click', (e) => {
+                e.preventDefault();
                 const bid = document.getElementById('ora-bosq-select').value;
                 if (!bid) return;
                 if (!this.tempOraBosqs.includes(bid)) {
                     this.tempOraBosqs.push(bid);
                     this.renderTempTags();
+                } else {
+                    alert("Este tema ya está en la lista temporal.");
                 }
             });
         }
