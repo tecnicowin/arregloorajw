@@ -256,6 +256,21 @@
                         <label>Nro. de Congregación</label>
                         <input type="number" id="ora-cong-nro" placeholder="Nro de su cong.">
                     </div>
+                    <div class="input-group">
+                        <label>Temas / Bosquejos (Seleccionar)</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                            <select id="ora-bosq-select" style="flex: 1;">
+                                <option value="">Seleccionar tema...</option>
+                                <!-- Injected -->
+                            </select>
+                            <button class="btn-primary" style="padding: 10px; border-radius: 8px;" id="btn-add-ora-bosq">
+                                <i data-lucide="plus"></i>
+                            </button>
+                        </div>
+                        <div id="ora-bosq-selected-tags" style="display: flex; flex-wrap: wrap; gap: 5px;">
+                            <!-- Selected Tags -->
+                        </div>
+                    </div>
                     <button class="btn-primary" style="width: 100%;" id="btn-save-ora">Guardar Orador</button>
                     <button class="btn-primary" style="width: 100%; margin-top: 8px; background: var(--surface-light); color: white; display: none;" id="btn-cancel-ora">Cancelar Edición</button>
                     <input type="hidden" id="ora-edit-name">
@@ -317,8 +332,14 @@
                     </div>
                     <div class="input-group">
                         <label>Bosquejo</label>
-                        <input type="text" id="arr-bosquejo" placeholder="Buscar tema..." list="data-bosquejos">
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="arr-bosquejo" placeholder="Buscar tema..." list="data-bosquejos" style="flex: 1;">
+                            <button class="btn-primary" style="padding: 10px; background: var(--secondary);" id="btn-quick-add-bosq" title="Vincular este tema al orador">
+                                <i data-lucide="plus"></i>
+                            </button>
+                        </div>
                         <datalist id="data-bosquejos"></datalist>
+                        <p id="bosq-hint" style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px; display: none;">Sugerencia: Este orador tiene temas vinculados.</p>
                     </div>
                     <button class="btn-primary" style="width: 100%; background: linear-gradient(135deg, var(--accent) 0%, #d97706 100%);" id="btn-save-arr">Confirmar Arreglo</button>
                 </div>

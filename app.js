@@ -14,6 +14,7 @@ const app = {
             nombre: '', nro: '', direccion: '', horario: '', celular: '', responsable: '', email: '', dias: ''
         }
     },
+    tempOraBosqs: [], // Temp storage for speaker registration
     currentPin: '',
     correctPin: '1234', // Default PIN for demo
     currentOradoresType: 'visitantes',
@@ -191,37 +192,21 @@ const app = {
                                     Bosquejos vinculados: <span style="color: var(--secondary); font-weight: 700;">${bosqCount}</span>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button onclick="app.startEditOra('${tipo}', '${nombre}')" style="background:none; border:none; color: var(--primary);">
-                                    <i data-lucide="user-cog" style="width: 18px;"></i>
-                                </button>
-                                <button onclick="app.removeItem('${tipo}', '${nombre}')" style="background:none; border:none; color:var(--text-dim);">
-                                    <i data-lucide="trash" style="width: 18px;"></i>
-                                </button>
-                            </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="app.startEditOra('${tipo}', '${nombre}')" style="background:none; border:none; color: var(--primary);">
+                                <i data-lucide="edit-3" style="width: 18px;"></i>
+                            </button>
+                            <button onclick="app.removeItem('${tipo}', '${nombre}')" style="background:none; border:none; color:var(--text-dim);">
+                                <i data-lucide="trash" style="width: 18px;"></i>
+                            </button>
                         </div>
-
-                        ${this.db.editingOra && this.db.editingOra.nombre === nombre ? `
-                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--glass-border);">
-                                <div style="font-size: 0.75rem; font-weight: 700; color: var(--secondary); margin-bottom: 10px; text-transform: uppercase;">Temas del Orador</div>
-                                <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                                    <select id="ora-bosq-add" style="flex: 1; font-size: 0.75rem;">
-                                        <option value="">Seleccionar tema...</option>
-                                        ${Object.entries(this.db.bosquejos).map(([id, t]) => `<option value="${id}">${id} - ${t}</option>`).join('')}
-                                    </select>
-                                    <button onclick="app.addBosquejoToOrador()" class="btn-primary" style="padding: 5px 10px; font-size: 0.7rem;">Añadir</button>
-                                </div>
-                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                    ${(info.bosquejos || []).map((bid, idx) => `
-                                        <span class="glass-card" style="padding: 4px 8px; font-size: 0.65rem; display: flex; align-items: center; gap: 5px; background: var(--secondary-glow); color: var(--secondary);">
-                                            #${bid}
-                                            <i data-lucide="x" onclick="app.removeBosquejoFromOrador(${idx})" style="width: 12px; cursor: pointer;"></i>
-                                        </span>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        ` : ''}
                     </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;">
+                        ${(info.bosquejos || []).length > 0 ? (info.bosquejos || []).map(bid => `
+                            <span style="font-size: 0.6rem; background: var(--surface-light); padding: 2px 6px; border-radius: 4px; color: var(--text-muted);">#${bid}</span>
+                        `).join('') : '<span style="font-size: 0.6rem; color: var(--text-dim);">Sin bosquejos</span>'}
+                    </div>
+                </div>
                 `;
             });
         lucide.createIcons();
@@ -468,12 +453,9 @@ const app = {
                 const nro_cong = document.getElementById('ora-cong-nro').value;
                 if (!nombre || !nro_cong) return alert("Completa los campos");
 
-                // Preserve bosquejos if updating
-                const oldData = this.db[tipo][nombre];
-                
                 this.db[tipo][nombre] = { 
                     nro_cong, 
-                    bosquejos: oldData?.bosquejos || [] 
+                    bosquejos: [...this.tempOraBosqs] 
                 };
                 
                 // If the name was changed while editing, delete the old key
@@ -482,9 +464,11 @@ const app = {
                 }
 
                 this.save();
+                this.tempOraBosqs = [];
                 this.renderOradores();
                 this.renderStats();
                 this.updateDataLists();
+                this.renderTempTags();
 
                 document.getElementById('ora-nombre').value = '';
                 document.getElementById('ora-cong-nro').value = '';
@@ -492,6 +476,18 @@ const app = {
                 this.db.editingOra = null;
                 document.getElementById('btn-cancel-ora').style.display = 'none';
                 document.getElementById('btn-save-ora').innerText = 'Guardar Orador';
+            });
+        }
+
+        const btnAddOraBosq = document.getElementById('btn-add-ora-bosq');
+        if (btnAddOraBosq) {
+            btnAddOraBosq.addEventListener('click', () => {
+                const bid = document.getElementById('ora-bosq-select').value;
+                if (!bid) return;
+                if (!this.tempOraBosqs.includes(bid)) {
+                    this.tempOraBosqs.push(bid);
+                    this.renderTempTags();
+                }
             });
         }
 
@@ -507,6 +503,39 @@ const app = {
         }
 
         // Save Arreglo
+                const arrOrador = document.getElementById('arr-orador');
+        if (arrOrador) {
+            arrOrador.addEventListener('input', () => this.updateArrangementOutlines());
+        }
+
+        const btnQuickAddBosq = document.getElementById('btn-quick-add-bosq');
+        if (btnQuickAddBosq) {
+            btnQuickAddBosq.addEventListener('click', () => {
+                const oradorRaw = document.getElementById('arr-orador').value;
+                const bosquejoRaw = document.getElementById('arr-bosquejo').value;
+                if (!oradorRaw || !bosquejoRaw) return alert("Selecciona orador y escribe un bosquejo");
+
+                const oradorName = oradorRaw.includes(' - ') ? oradorRaw.split(' - ')[0] : oradorRaw;
+                const bId = bosquejoRaw.includes(' - ') ? bosquejoRaw.split(' - ')[0] : bosquejoRaw;
+                
+                // Search for speaker in Visitors or Outgoing
+                let found = false;
+                ['visitantes', 'salientes'].forEach(tipo => {
+                    if (this.db[tipo][oradorName]) {
+                        if (!this.db[tipo][oradorName].bosquejos) this.db[tipo][oradorName].bosquejos = [];
+                        if (!this.db[tipo][oradorName].bosquejos.includes(bId)) {
+                            this.db[tipo][oradorName].bosquejos.push(bId);
+                            this.save();
+                            alert(`Bosquejo #${bId} vinculado a ${oradorName}`);
+                            this.updateArrangementOutlines();
+                        }
+                        found = true;
+                    }
+                });
+                if (!found) alert("Orador no encontrado en la base de datos");
+            });
+        }
+
         const btnSaveArr = document.getElementById('btn-save-arr');
         if (btnSaveArr) {
             btnSaveArr.addEventListener('click', () => {
@@ -930,37 +959,64 @@ const app = {
         document.getElementById('ora-tipo').value = tipo;
         document.getElementById('ora-nombre').value = nombre;
         document.getElementById('ora-cong-nro').value = info.nro_cong;
+        this.tempOraBosqs = [...(info.bosquejos || [])];
+        this.renderTempTags();
         
         document.getElementById('btn-save-ora').innerText = 'Actualizar Datos';
         document.getElementById('btn-cancel-ora').style.display = 'block';
         
-        this.renderOradores(); // Refresh to show detail editor
         document.querySelector('#screen-oradores .scrollable').scrollTo({ top: 0, behavior: 'smooth' });
     },
 
-    addBosquejoToOrador() {
-        if (!this.db.editingOra) return;
-        const bid = document.getElementById('ora-bosq-add').value;
-        if (!bid) return;
-
-        const { tipo, nombre } = this.db.editingOra;
-        if (!this.db[tipo][nombre].bosquejos) this.db[tipo][nombre].bosquejos = [];
-        
-        if (!this.db[tipo][nombre].bosquejos.includes(bid)) {
-            this.db[tipo][nombre].bosquejos.push(bid);
-            this.save();
-            this.renderOradores();
-        } else {
-            alert("Este tema ya está vinculado.");
-        }
+    renderTempTags() {
+        const container = document.getElementById('ora-bosq-selected-tags');
+        if (!container) return;
+        container.innerHTML = '';
+        this.tempOraBosqs.forEach((bid, idx) => {
+            container.innerHTML += `
+                <span class="glass-card" style="padding: 4px 10px; font-size: 0.7rem; background: var(--primary-glow); color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                    #${bid}
+                    <i data-lucide="x" onclick="app.removeTempBosq(${idx})" style="width: 12px; cursor: pointer;"></i>
+                </span>
+            `;
+        });
+        lucide.createIcons();
     },
 
-    removeBosquejoFromOrador(index) {
-        if (!this.db.editingOra) return;
-        const { tipo, nombre } = this.db.editingOra;
-        this.db[tipo][nombre].bosquejos.splice(index, 1);
-        this.save();
-        this.renderOradores();
+    removeTempBosq(idx) {
+        this.tempOraBosqs.splice(idx, 1);
+        this.renderTempTags();
+    },
+
+    updateArrangementOutlines() {
+        const oradorRaw = document.getElementById('arr-orador').value;
+        const datalist = document.getElementById('data-bosquejos');
+        const hint = document.getElementById('bosq-hint');
+        if (!datalist) return;
+
+        datalist.innerHTML = '';
+        
+        const oradorName = oradorRaw.includes(' - ') ? oradorRaw.split(' - ')[0] : oradorRaw;
+        
+        // Find speaker in DB
+        let linkedBosqs = [];
+        ['visitantes', 'salientes'].forEach(t => {
+            if (this.db[t][oradorName]) linkedBosqs = this.db[t][oradorName].bosquejos || [];
+        });
+
+        if (linkedBosqs.length > 0) {
+            linkedBosqs.forEach(bid => {
+                const name = this.db.bosquejos[bid] || '';
+                datalist.innerHTML += `<option value="${bid}${name ? ' - ' + name : ''}">`;
+            });
+            if (hint) hint.style.display = 'block';
+        } else {
+            // Default: show all
+            Object.entries(this.db.bosquejos).forEach(([id, name]) => {
+                datalist.innerHTML += `<option value="${id} - ${name}">`;
+            });
+            if (hint) hint.style.display = 'none';
+        }
     }
 };
 
