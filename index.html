@@ -154,6 +154,8 @@
                         </div>
                     </div>
                     <button class="btn-primary" style="width: 100%;" id="btn-save-cong">Guardar Congregación</button>
+                    <button class="btn-primary" style="width: 100%; margin-top: 8px; background: var(--surface-light); color: white; display: none;" id="btn-cancel-cong">Cancelar Edición</button>
+                    <input type="hidden" id="cong-edit-id">
                 </div>
                 
                 <h4 style="margin-bottom: 10px; color: var(--text-muted);">Listado</h4>
@@ -255,6 +257,8 @@
                         <input type="number" id="ora-cong-nro" placeholder="Nro de su cong.">
                     </div>
                     <button class="btn-primary" style="width: 100%;" id="btn-save-ora">Guardar Orador</button>
+                    <button class="btn-primary" style="width: 100%; margin-top: 8px; background: var(--surface-light); color: white; display: none;" id="btn-cancel-ora">Cancelar Edición</button>
+                    <input type="hidden" id="ora-edit-name">
                 </div>
 
                 <div class="glass-card" style="margin-bottom: 20px; border: 1px dashed var(--primary); background: var(--primary-glow);">
@@ -389,6 +393,30 @@
             </div>
         </div>
 
+        <!-- Consultar Screen -->
+        <div id="screen-consultar" class="screen">
+            <header>
+                <div class="title-area">
+                    <h2>Consultar Datos</h2>
+                </div>
+            </header>
+            <div class="scrollable" style="padding: 0 20px;">
+                <div class="glass-card" style="margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label>Buscar Orador o Congregación</label>
+                        <div style="position: relative;">
+                            <input type="text" id="consult-query" placeholder="Escribe nombre o número..." style="padding-left: 35px;">
+                            <i data-lucide="search" style="position: absolute; left: 10px; top: 10px; width: 16px; color: var(--text-dim);"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="consult-results" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px;">
+                    <!-- Results dynamically -->
+                </div>
+            </div>
+        </div>
+
         <!-- Settings Screen -->
         <div id="screen-settings" class="screen">
             <header>
@@ -464,6 +492,10 @@
             <div class="nav-item" onclick="app.navigate('oradores')" id="nav-oradores">
                 <i data-lucide="users"></i>
                 <span>Oradores</span>
+            </div>
+            <div class="nav-item" onclick="app.navigate('consultar')" id="nav-consultar">
+                <i data-lucide="search"></i>
+                <span>Consultar</span>
             </div>
             <div class="nav-item" onclick="app.navigate('arreglos')" id="nav-arreglos">
                 <i data-lucide="calendar-range"></i>

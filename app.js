@@ -79,20 +79,35 @@ const app = {
             congList.innerHTML = '';
             Object.entries(this.db.congregaciones)
                 .filter(([id, data]) => {
-                    const name = typeof data === 'string' ? data : data.nombre;
+                    const name = typeof data === 'string' ? data : data.name || data.nombre;
                     return name.toLowerCase().includes(congQuery) || id.includes(congQuery);
                 })
                 .forEach(([id, data]) => {
                     const name = typeof data === 'string' ? data : data.nombre;
                     congList.innerHTML += `
-                        <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;">
-                            <div>
-                                <span style="color: var(--primary); font-weight: 700; margin-right: 10px;">${id}</span>
-                                <span>${name}</span>
+                        <div class="glass-card" style="padding: 12px 16px; margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div>
+                                    <span style="color: var(--primary); font-weight: 700; margin-right: 10px;">${id}</span>
+                                    <span style="font-weight: 700;">${name}</span>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button onclick="app.startEditCong('${id}')" style="background:none; border:none; color: var(--primary);">
+                                        <i data-lucide="edit-3" style="width: 16px;"></i>
+                                    </button>
+                                    <button onclick="app.removeItem('congregaciones', '${id}')" style="background:none; border:none; color: var(--text-muted);">
+                                        <i data-lucide="trash-2" style="width: 16px;"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <button onclick="app.removeItem('congregaciones', '${id}')" style="background:none; border:none; color: var(--text-muted);">
-                                <i data-lucide="trash-2" style="width: 16px;"></i>
-                            </button>
+                            ${typeof data === 'object' ? `
+                                <div style="font-size: 0.75rem; color: var(--text-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                    <div>Dir: ${data.direccion || '-'}</div>
+                                    <div>Día: ${data.dia || '-'} ${data.hora || '-'}</div>
+                                    <div>Resp: ${data.responsable || '-'}</div>
+                                    <div>Tel: ${data.contacto || '-'}</div>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 });
@@ -163,18 +178,116 @@ const app = {
         Object.entries(data)
             .filter(([nombre, info]) => nombre.toLowerCase().includes(query) || info.nro_cong.toLowerCase().includes(query))
             .forEach(([nombre, info]) => {
+                const bosqCount = (info.bosquejos || []).length;
                 list.innerHTML += `
-                    <div class="glass-card fade-in" style="margin-bottom:8px; position:relative;">
-                        <div style="font-weight:700;">${nombre}</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted);">
-                            Congregación: <span style="color:var(--primary);">${info.nro_cong}</span>
+                    <div class="glass-card fade-in" style="margin-bottom:8px; position:relative; padding: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
+                            <div>
+                                <div style="font-weight:700;">${nombre}</div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">
+                                    Congregación: <span style="color:var(--primary);">${info.nro_cong}</span>
+                                </div>
+                                <div style="font-size:0.7rem; color:var(--text-dim); margin-top: 5px;">
+                                    Bosquejos vinculados: <span style="color: var(--secondary); font-weight: 700;">${bosqCount}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="app.startEditOra('${tipo}', '${nombre}')" style="background:none; border:none; color: var(--primary);">
+                                    <i data-lucide="user-cog" style="width: 18px;"></i>
+                                </button>
+                                <button onclick="app.removeItem('${tipo}', '${nombre}')" style="background:none; border:none; color:var(--text-dim);">
+                                    <i data-lucide="trash" style="width: 18px;"></i>
+                                </button>
+                            </div>
                         </div>
-                        <button onclick="app.removeItem('${tipo}', '${nombre}')" style="position:absolute; right:15px; top:15px; background:none; border:none; color:var(--text-dim);">
-                            <i data-lucide="x" style="width:14px;"></i>
-                        </button>
+
+                        ${this.db.editingOra && this.db.editingOra.nombre === nombre ? `
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--glass-border);">
+                                <div style="font-size: 0.75rem; font-weight: 700; color: var(--secondary); margin-bottom: 10px; text-transform: uppercase;">Temas del Orador</div>
+                                <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                                    <select id="ora-bosq-add" style="flex: 1; font-size: 0.75rem;">
+                                        <option value="">Seleccionar tema...</option>
+                                        ${Object.entries(this.db.bosquejos).map(([id, t]) => `<option value="${id}">${id} - ${t}</option>`).join('')}
+                                    </select>
+                                    <button onclick="app.addBosquejoToOrador()" class="btn-primary" style="padding: 5px 10px; font-size: 0.7rem;">Añadir</button>
+                                </div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                    ${(info.bosquejos || []).map((bid, idx) => `
+                                        <span class="glass-card" style="padding: 4px 8px; font-size: 0.65rem; display: flex; align-items: center; gap: 5px; background: var(--secondary-glow); color: var(--secondary);">
+                                            #${bid}
+                                            <i data-lucide="x" onclick="app.removeBosquejoFromOrador(${idx})" style="width: 12px; cursor: pointer;"></i>
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });
+        lucide.createIcons();
+    },
+
+    renderConsultar() {
+        const query = document.getElementById('consult-query')?.value?.toLowerCase() || '';
+        const list = document.getElementById('consult-results');
+        if (!list) return;
+        list.innerHTML = '';
+
+        if (!query) {
+            list.innerHTML = '<p style="text-align:center; color:var(--text-dim); margin-top: 20px;">Comienza a escribir para buscar oradores o congregaciones.</p>';
+            return;
+        }
+
+        // Search Speakers
+        ['visitantes', 'salientes'].forEach(tipo => {
+            Object.entries(this.db[tipo]).forEach(([nombre, info]) => {
+                if (nombre.toLowerCase().includes(query) || info.nro_cong.includes(query)) {
+                    const cong = this.db.congregaciones[info.nro_cong];
+                    const congName = typeof cong === 'string' ? cong : (cong?.nombre || 'Desconocida');
+                    list.innerHTML += `
+                        <div class="glass-card fade-in" style="border-left: 4px solid var(--primary);">
+                            <div style="font-size: 0.6rem; text-transform: uppercase; color: var(--primary); font-weight: 700;">ORADOR ${tipo.toUpperCase()}</div>
+                            <div style="font-weight: 700; font-size: 1.1rem; margin: 4px 0;">${nombre}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">
+                                <i data-lucide="building-2" style="width: 12px; vertical-align: middle;"></i> ${info.nro_cong} - ${congName}
+                            </div>
+                            <div style="font-size: 0.75rem;">
+                                <div style="font-weight: 600; color: var(--secondary); margin-bottom: 5px;">Bosquejos Disponibles:</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                    ${(info.bosquejos || []).length > 0 ? (info.bosquejos || []).map(bid => `
+                                        <span style="background: var(--surface-light); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;">
+                                            #${bid} ${this.db.bosquejos[bid] || ''}
+                                        </span>
+                                    `).join('') : '<span style="color: var(--text-dim);">Ninguno vinculado</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        });
+
+        // Search Congregations
+        Object.entries(this.db.congregaciones).forEach(([id, data]) => {
+            const name = typeof data === 'string' ? data : data.nombre;
+            if (name.toLowerCase().includes(query) || id.includes(query)) {
+                list.innerHTML += `
+                    <div class="glass-card fade-in" style="border-left: 4px solid var(--secondary);">
+                        <div style="font-size: 0.6rem; text-transform: uppercase; color: var(--secondary); font-weight: 700;">CONGREGACIÓN</div>
+                        <div style="font-weight: 700; font-size: 1.1rem; margin: 4px 0;">${id} - ${name}</div>
+                        ${typeof data === 'object' ? `
+                            <div style="font-size: 0.8rem; color: var(--text-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                                <div><i data-lucide="map-pin" style="width: 12px;"></i> ${data.direccion || '-'}</div>
+                                <div><i data-lucide="clock" style="width: 12px;"></i> ${data.dia || '-'} ${data.hora || '-'}</div>
+                                <div><i data-lucide="user" style="width: 12px;"></i> ${data.responsable || '-'}</div>
+                                <div><i data-lucide="phone" style="width: 12px;"></i> ${data.contacto || '-'}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+        });
+
         lucide.createIcons();
     },
 
@@ -300,11 +413,32 @@ const app = {
                     responsable: document.getElementById('cong-responsable').value,
                     contacto: document.getElementById('cong-contacto').value
                 };
+
+                // If the ID was changed while editing, delete the old key
+                if (this.db.editingCong && this.db.editingCong !== id) {
+                    delete this.db.congregaciones[this.db.editingCong];
+                }
+
                 this.save();
                 this.renderLists();
                 
                 ['cong-nro', 'cong-nombre', 'cong-direccion', 'cong-dia', 'cong-hora', 'cong-responsable', 'cong-contacto']
                     .forEach(fid => document.getElementById(fid).value = '');
+                
+                this.db.editingCong = null;
+                document.getElementById('btn-cancel-cong').style.display = 'none';
+                document.getElementById('btn-save-cong').innerText = 'Guardar Congregación';
+            });
+        }
+
+        const btnCancelCong = document.getElementById('btn-cancel-cong');
+        if (btnCancelCong) {
+            btnCancelCong.addEventListener('click', () => {
+                this.db.editingCong = null;
+                ['cong-nro', 'cong-nombre', 'cong-direccion', 'cong-dia', 'cong-hora', 'cong-responsable', 'cong-contacto']
+                    .forEach(fid => document.getElementById(fid).value = '');
+                btnCancelCong.style.display = 'none';
+                document.getElementById('btn-save-cong').innerText = 'Guardar Congregación';
             });
         }
 
@@ -334,14 +468,41 @@ const app = {
                 const nro_cong = document.getElementById('ora-cong-nro').value;
                 if (!nombre || !nro_cong) return alert("Completa los campos");
 
-                this.db[tipo][nombre] = { nro_cong };
+                // Preserve bosquejos if updating
+                const oldData = this.db[tipo][nombre];
+                
+                this.db[tipo][nombre] = { 
+                    nro_cong, 
+                    bosquejos: oldData?.bosquejos || [] 
+                };
+                
+                // If the name was changed while editing, delete the old key
+                if (this.db.editingOra && this.db.editingOra.nombre !== nombre) {
+                    delete this.db[this.db.editingOra.tipo][this.db.editingOra.nombre];
+                }
+
                 this.save();
-                this.renderOradores(tipo);
+                this.renderOradores();
                 this.renderStats();
                 this.updateDataLists();
 
                 document.getElementById('ora-nombre').value = '';
                 document.getElementById('ora-cong-nro').value = '';
+                
+                this.db.editingOra = null;
+                document.getElementById('btn-cancel-ora').style.display = 'none';
+                document.getElementById('btn-save-ora').innerText = 'Guardar Orador';
+            });
+        }
+
+        const btnCancelOra = document.getElementById('btn-cancel-ora');
+        if (btnCancelOra) {
+            btnCancelOra.addEventListener('click', () => {
+                this.db.editingOra = null;
+                document.getElementById('ora-nombre').value = '';
+                document.getElementById('ora-cong-nro').value = '';
+                btnCancelOra.style.display = 'none';
+                document.getElementById('btn-save-ora').innerText = 'Guardar Orador';
             });
         }
 
@@ -429,9 +590,10 @@ const app = {
         }
 
         // Search Handlers
-        ['search-cong', 'search-bosq', 'search-ora'].forEach(id => {
+        ['search-cong', 'search-bosq', 'search-ora', 'consult-query'].forEach(id => {
             document.getElementById(id)?.addEventListener('input', () => {
                 if (id === 'search-ora') this.renderOradores();
+                else if (id === 'consult-query') this.renderConsultar();
                 else this.renderLists();
             });
         });
@@ -715,6 +877,67 @@ const app = {
             }
         }
         input.click();
+    },
+
+    // --- New Editing Logic ---
+    startEditCong(id) {
+        const data = this.db.congregaciones[id];
+        if (!data) return;
+        
+        this.db.editingCong = id;
+        document.getElementById('cong-nro').value = id;
+        document.getElementById('cong-nombre').value = typeof data === 'string' ? data : data.nombre;
+        document.getElementById('cong-direccion').value = data.direccion || '';
+        document.getElementById('cong-dia').value = data.dia || '';
+        document.getElementById('cong-hora').value = data.hora || '';
+        document.getElementById('cong-responsable').value = data.responsable || '';
+        document.getElementById('cong-contacto').value = data.contacto || '';
+        
+        document.getElementById('btn-save-cong').innerText = 'Actualizar Datos';
+        document.getElementById('btn-cancel-cong').style.display = 'block';
+        
+        document.querySelector('#screen-congregaciones .scrollable').scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    startEditOra(tipo, nombre) {
+        const info = this.db[tipo][nombre];
+        if (!info) return;
+
+        this.db.editingOra = { tipo, nombre };
+        document.getElementById('ora-tipo').value = tipo;
+        document.getElementById('ora-nombre').value = nombre;
+        document.getElementById('ora-cong-nro').value = info.nro_cong;
+        
+        document.getElementById('btn-save-ora').innerText = 'Actualizar Datos';
+        document.getElementById('btn-cancel-ora').style.display = 'block';
+        
+        this.renderOradores(); // Refresh to show detail editor
+        document.querySelector('#screen-oradores .scrollable').scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    addBosquejoToOrador() {
+        if (!this.db.editingOra) return;
+        const bid = document.getElementById('ora-bosq-add').value;
+        if (!bid) return;
+
+        const { tipo, nombre } = this.db.editingOra;
+        if (!this.db[tipo][nombre].bosquejos) this.db[tipo][nombre].bosquejos = [];
+        
+        if (!this.db[tipo][nombre].bosquejos.includes(bid)) {
+            this.db[tipo][nombre].bosquejos.push(bid);
+            this.save();
+            this.renderOradores();
+        } else {
+            alert("Este tema ya está vinculado.");
+        }
+    },
+
+    removeBosquejoFromOrador(index) {
+        if (!this.db.editingOra) return;
+        const { tipo, nombre } = this.db.editingOra;
+        this.db[tipo][nombre].bosquejos.splice(index, 1);
+        this.save();
+        this.renderOradores();
     }
 };
 
