@@ -763,7 +763,16 @@ const app = {
             styles: { fontSize: 9 }
         });
 
-        currentY = doc.lastAutoTable.finalY + 15;
+        currentY = doc.lastAutoTable.finalY + 10;
+        
+        // Host (Our) Details Footer - Now under Anfitriona section
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text(`Dirección: ${this.db.config.direccion || '---'}`, 14, currentY);
+        doc.text(`Día de Reunión: ${this.db.config.dias || '---'} | Horario: ${this.db.config.horario || '---'}`, 14, currentY + 4);
+        doc.text(`Responsable: ${this.db.config.responsable || '---'} | Contacto: ${this.db.config.celular || '---'} | Email: ${this.db.config.email || '---'}`, 14, currentY + 8);
+
+        currentY = currentY + 20;
 
         // SECCIÓN VISITANTES
         doc.setFontSize(12);
@@ -781,12 +790,26 @@ const app = {
 
         currentY = doc.lastAutoTable.finalY + 10;
         
-        // Host Details Footer (under Visitantes - requested)
+        // Visitor Congregation Details Logic (requested)
+        // Group visitors by congregation to avoid duplicates
+        const uniqueVisitorCongs = [...new Set(visitantes.map(v => v.congregacion.split(' - ')[0].trim()))];
+        
         doc.setFontSize(8);
         doc.setTextColor(100);
-        doc.text(`Dirección: ${this.db.config.direccion || '---'}`, 14, currentY);
-        doc.text(`Día de Reunión: ${this.db.config.dias || '---'} | Horario: ${this.db.config.horario || '---'}`, 14, currentY + 4);
-        doc.text(`Responsable: ${this.db.config.responsable || '---'} | Contacto: ${this.db.config.celular || '---'} | Email: ${this.db.config.email || '---'}`, 14, currentY + 8);
+        
+        uniqueVisitorCongs.forEach(cid => {
+            const cdata = this.db.congregaciones[cid];
+            if (cdata && typeof cdata === 'object') {
+                doc.setFontSize(9);
+                doc.setTextColor(0);
+                doc.text(`DETALLES CONGREGACIÓN: ${cdata.nombre} (#${cid})`, 14, currentY);
+                doc.setFontSize(8);
+                doc.setTextColor(100);
+                doc.text(`Dirección: ${cdata.direccion || '---'}`, 14, currentY + 4);
+                doc.text(`Día: ${cdata.dia || '---'} | Hora: ${cdata.hora || '---'} | Responsable: ${cdata.responsable || '---'} | Contacto: ${cdata.contacto || '---'}`, 14, currentY + 8);
+                currentY += 15;
+            }
+        });
 
         if (share && navigator.share) {
             const pdfBlob = doc.output('blob');
