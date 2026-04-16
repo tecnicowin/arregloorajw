@@ -36,14 +36,6 @@ const app = {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log("SW Error:", err));
             }
-            
-            // Catch PWA Install
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                this.deferredPrompt = e;
-                const banner = document.getElementById('install-banner');
-                if (banner) banner.style.display = 'block';
-            });
         } catch (err) {
             console.error("Critical Init Error:", err);
             // Don't freeze, just show login
@@ -1151,17 +1143,6 @@ const app = {
             });
             if (hint) hint.style.display = 'none';
         }
-    },
-
-    installApp() {
-        if (!this.deferredPrompt) return;
-        this.deferredPrompt.prompt();
-        this.deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                document.getElementById('install-banner').style.display = 'none';
-            }
-            this.deferredPrompt = null;
-        });
     },
 
     // --- GitHub Cloud Sync Logic ---

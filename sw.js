@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oradores-pro-v2';
+const CACHE_NAME = 'oradores-pro-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -20,5 +20,6 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Ultra-passive: try network first, then cache
   e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
