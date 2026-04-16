@@ -37,6 +37,14 @@ const app = {
             navigator.serviceWorker.register('sw.js')
                 .then(() => console.log("Service Worker Registered"));
         }
+
+        // PWA Installation Prompt Logic
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            const installBanner = document.getElementById('install-banner');
+            if (installBanner) installBanner.style.display = 'block';
+        });
     },
 
     save() {
@@ -1126,6 +1134,20 @@ const app = {
             });
             if (hint) hint.style.display = 'none';
         }
+    },
+
+        }
+    },
+
+    installApp() {
+        if (!this.deferredPrompt) return;
+        this.deferredPrompt.prompt();
+        this.deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                document.getElementById('install-banner').style.display = 'none';
+            }
+            this.deferredPrompt = null;
+        });
     },
 
     // --- GitHub Cloud Sync Logic ---

@@ -73,8 +73,22 @@
                 </button>
             </header>
 
-            <div class="scrollable dashboard-grid">
-                <div class="glass-card status-card">
+            <div class="scrollable">
+                <div style="padding: 0 20px;">
+                    <!-- PWA Install Banner -->
+                    <div id="install-banner" class="glass-card" style="display: none; background: linear-gradient(135deg, var(--primary), var(--secondary)); border: none; margin-bottom: 20px; color: white;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="margin: 0; color: white;">¿Deseas instalar la App?</h4>
+                                <p style="font-size: 0.7rem; margin: 5px 0 0; opacity: 0.9;">Accede más rápido desde tu pantalla de inicio.</p>
+                            </div>
+                            <button class="btn-primary" style="background: white; color: var(--primary); font-size: 0.7rem; padding: 8px 15px; box-shadow: none;" onclick="app.installApp()">Instalar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="glass-card status-card">
                     <div class="status-icon">
                         <i data-lucide="calendar"></i>
                     </div>
