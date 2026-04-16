@@ -20,6 +20,7 @@ const app = {
     currentPin: '',
     correctPin: '1234', // Default PIN for demo
     currentOradoresType: 'visitantes',
+    syncLock: false, // Prevents auto-push during initial pull
 
     // --- Core Methods ---
     init() {
@@ -51,8 +52,8 @@ const app = {
         localStorage.setItem('arreglos', JSON.stringify(this.db.arreglos));
         localStorage.setItem('config', JSON.stringify(this.db.config));
 
-        // Auto-push to cloud if configured
-        if (this.db.config.ghToken && this.db.config.ghUser) {
+        // Auto-push to cloud if configured and NOT locked
+        if (!this.syncLock && this.db.config.ghToken && this.db.config.ghUser) {
             this.cloudPush(true); // Silent mode
         }
     },
@@ -998,10 +999,16 @@ const app = {
                 // Navigate first to show UI
                 this.navigate('dashboard');
                 
-                // Auto-sync Pull AFTER a delay to prevent freezing
+                // Prioritize Pull (Download) and lock Push (Upload) for 5 seconds
+                this.syncLock = true;
                 setTimeout(() => {
                     if (this.db.config.ghToken && this.db.config.ghUser) {
-                        this.cloudPull(true);
+                        this.cloudPull(true).then(() => {
+                            // Release lock after pull is finished (or failed)
+                            setTimeout(() => { this.syncLock = false; }, 2000);
+                        });
+                    } else {
+                        this.syncLock = false;
                     }
                 }, 1000);
             } else {
