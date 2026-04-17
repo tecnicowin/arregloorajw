@@ -219,7 +219,14 @@
     "205": "VISITA DEL SUPERINTENDENTE",
     "12326": "¿Quién Salvara el Planeta?"
   },
-  "visitantes": {},
+  "visitantes": {
+    "Antonio Caceres": "SAN BERNARDINO",
+    "William Tellez": "SAN BERNARDINO",
+    "Edgardo Tillero": "SAN BERNARDINO",
+    "Elier Mendoza": "SAN BERNARDINO",
+    "Christian Isturiz": "SAN BERNARDINO",
+    "Orlando Freites": "VISITA DEL SUPERINTENDENTE"
+  },
   "salientes": {},
   "arreglos": [],
   "config": {
