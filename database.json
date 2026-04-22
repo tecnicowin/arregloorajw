@@ -327,6 +327,14 @@
       "bosquejo": "185",
       "congregacion": "3780 - SAN BERNARDINO",
       "id": 1776899687541
+    },
+    {
+      "fecha": "2026-05-02",
+      "tipo": "Visitante",
+      "nombre": "Rafael Molina",
+      "bosquejo": "158",
+      "congregacion": "5173 - LOS PALOS GRANDES",
+      "id": 1776899747319
     }
   ],
   "config": {
